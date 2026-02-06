@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPTIMA CENTRUM CARE</title>
+</head>
+
+<body>
+    <header id="header">
+        <div id="first">
+            <h1 id="h1">OPTIMA-CENTRUM-CARE </h1>
+        </div>
+        <div id="second">
+            <ul id="ul">
+                <li><a href="index.html">HOME</a></li>
+                <li><a href="index2.html">ABOUT-US</a></li>
+                <li><a href="index3.html">DOCTORS</a></li>
+                <li><a href="index4.html">SUMMARIZER</a></li>
+                <li><a href="index5.html">ONLINE-CARE</a></li>
+            </ul>
+        </div>
+    </header>
+    <section id="section">
+        <div class="btnpart">
+            <button id="btn1">BOOK-APPOINTMENT</button>
+            <form id="appointment-form" class="form-box" method="POST" action="/send">
+                <h2 class="form-title">Appointment Details</h2>
+
+                <input type="text" name="name" placeholder="Your Name" required>
+                <input type="email" name="email" placeholder="Your Email" required>
+                <input type="text" name="doctorId" placeholder="Doctor ID" required>
+
+                <button type="submit" class="submit-btn">Submit</button>
+            </form>
+        </div>
+    </section>
+  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"
+        integrity="sha512-NcZdtrT77bJr4STcmsGAESr06BYGE8woZdSdEgqnpyqac7sugNO+Tr4bGwGF3MsnEkGKhU2KL2xh6Ec+BqsaHA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="script.js"></script>
+</body>
+
+
+</html>

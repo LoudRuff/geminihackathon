@@ -1,0 +1,177 @@
+/* RESET + BASE */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f5f8fa;
+    color: #333;
+}
+
+body {
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+#header {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+#h1 {
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    font-weight: 700;
+    color: #0b5ed7;
+    margin-bottom: 15px;
+    word-break: break-word;
+
+}
+
+
+#ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 0;
+    list-style: none;
+}
+
+#ul li a {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #0b5ed7;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 13px;
+    transition: 0.3s;
+    white-space: nowrap;
+}
+
+#ul li a:hover {
+    background-color: #0a4db0;
+    transform: translateY(-2px);
+}
+
+
+.page-title {
+    text-align: center;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    margin-top: 40px;
+    color: #0b5ed7;
+}
+
+
+#section {
+    width: 90%;
+    max-width: 1200px;
+    margin: 50px auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    text-align: center;
+}
+
+#section h2 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    color: #0b5ed7;
+    margin-bottom: 20px;
+}
+
+#section p {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 25px;
+    font-family: 'Lato', sans-serif;
+}
+
+
+.btnpart,
+#btn1 {
+    display: inline-block;
+    padding: 12px 25px;
+    background-color: #0b5ed7;
+    color: white;
+    font-size: 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btnpart:hover,
+#btn1:hover {
+    background-color: #0a4db0;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    #h1 {
+        font-size: 2rem;
+    }
+
+    #ul li a {
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+
+    #section h2 {
+        font-size: 1.8rem;
+    }
+
+    #section p {
+        font-size: 0.95rem;
+    }
+
+    .btnpart,
+    #btn1 {
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    #h1 {
+        font-size: 1.5rem;
+    }
+
+    #ul {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #ul li a {
+        width: 100%;
+        max-width: 200px;
+        padding: 8px 0;
+        font-size: 11px;
+        text-align: center;
+    }
+
+    #section {
+        width: 90%;
+        padding: 20px;
+    }
+
+    #section h2 {
+        font-size: 1.5rem;
+    }
+
+    #section p {
+        font-size: 0.9rem;
+    }
+
+    .btnpart,
+    #btn1 {
+        width: 100%;
+        padding: 10px 0;
+        font-size: 14px;
+    }
+}
