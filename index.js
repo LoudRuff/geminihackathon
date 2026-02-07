@@ -10,7 +10,7 @@ const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 const genAI = new GoogleGenerativeAI("AIzaSyDsZTyU7lGQ28a7EoODBlJFb3JjtXPYbUA");
 
-
+app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -127,5 +127,6 @@ Return ONLY valid JSON.
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
 
 
