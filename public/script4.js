@@ -10,14 +10,21 @@ async function play() {
   const formData = new FormData();
   formData.append("image", file);
 
-  const res = await fetch("/summarize-image", {
-    method: "POST",
-    body: formData,
-  });
+  try {
+    const res = await fetch("/summarize-image", {
+      method: "POST",
+      body: formData
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  // Display extracted text and summary separately
-  document.getElementById("ocrText").textContent = data.extractedText || "No text extracted";
-  document.getElementById("summary").textContent = data.summary || "No summary available";
+    document.getElementById("ocrText").textContent =
+      data.extractedText || "No text extracted";
+
+    document.getElementById("summary").textContent =
+      data.summary || "No summary available";
+  } catch (err) {
+    console.error(err);
+    alert("Failed to process image");
+  }
 }
