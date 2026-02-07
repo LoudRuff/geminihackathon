@@ -12,7 +12,7 @@ const PORT = 3000;
 const upload = multer({ storage: multer.memoryStorage() });
 
 // 🔹 Gemini API
-const genAI = new GoogleGenerativeAI("YOUR_GEMINI_API_KEY");
+const genAI = new GoogleGenerativeAI("AIzaSyDfNQ7KtRh0WwOFFJzoJUchoMpXC1pd6O0");
 
 // 🔹 Middleware
 app.use(express.static(path.join(__dirname, "public")));
@@ -131,3 +131,4 @@ ${extractedText}
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
