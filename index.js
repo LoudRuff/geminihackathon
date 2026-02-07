@@ -9,7 +9,7 @@ const PORT = 3000;
 
 // =================== CONFIG ===================
 const upload = multer({ storage: multer.memoryStorage() });
-const genAI = new GoogleGenerativeAI("AIzaSyDsZTyU7lGQ28a7EoODBlJFb3JjtXPYbUA");
+const genAI = new GoogleGenerativeAI("AIzaSyBNgkIHLSMZbrf3IrsVukjMvqj1RLe8EUk");
 
 // =================== MIDDLEWARE ===================
 app.use(express.static(path.join(__dirname, "public")));
@@ -142,3 +142,4 @@ Format:
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
