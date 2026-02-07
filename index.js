@@ -2,110 +2,143 @@ const express = require("express");
 const path = require("path");
 const multer = require("multer");
 const nodemailer = require("nodemailer");
-const app = express();
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const app = express();
 const PORT = 3000;
 
+// =================== CONFIG ===================
 const upload = multer({ storage: multer.memoryStorage() });
 const genAI = new GoogleGenerativeAI("AIzaSyDsZTyU7lGQ28a7EoODBlJFb3JjtXPYbUA");
 
+// =================== MIDDLEWARE ===================
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// =================== EMAIL + AI AUTO REPLY ===================
 app.post("/send", async (req, res) => {
   const { name, email, doctorId } = req.body;
 
   try {
-    let transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: "coslog000@gmail.com",
-        pass: "rwho kjzs dhii emuz"
-      },
+        pass: "rwho kjzs dhii emuz" // app password
+      }
     });
 
-    let mailOptions = {
+    // ---- Send email to hospital ----
+    await transporter.sendMail({
       from: `"${name}" <${email}>`,
       to: "coslog000@gmail.com",
       subject: `Appointment Request from ${name}`,
-      text: `Name: ${name}\nUser Email: ${email}\nDoctor ID: ${doctorId}`,
-      replyTo: email,
-    };
+      text: `Name: ${name}\nEmail: ${email}\nDoctor ID: ${doctorId}`,
+      replyTo: email
+    });
 
-    await transporter.sendMail(mailOptions);
+    // ---- Generate AI reply ----
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const prompt = `
+Write a polite and professional email reply to a patient.
 
-    const aiPrompt = `
-Write a polite, professional automatic email reply to a patient.
-Details:
 Patient Name: ${name}
 Doctor ID: ${doctorId}
 Hospital Name: OPTIMA-CENTRUM-CARE
 
-Tone: calm, reassuring, professional.
-Do not include markdown or explanations.
+Rules:
+- Calm and reassuring tone
+- No markdown
+- No explanation
 `;
 
-    const aiResult = await model.generateContent(aiPrompt);
-    const aiReplyText = await aiResult.response.text();
+    const result = await model.generateContent(prompt);
+    const aiReply = result.response.text().trim();
 
-    let autoReplyOptions = {
+    // ---- Auto reply to user ----
+    await transporter.sendMail({
       from: `"OPTIMA-CENTRUM-CARE" <coslog000@gmail.com>`,
       to: email,
       subject: "Appointment Request Received",
-      text: aiReplyText.trim(),
-    };
+      text: aiReply
+    });
 
-    await transporter.sendMail(autoReplyOptions);
+    res.sendFile(path.join(__dirname, "public", "nonerror.html"));
 
-    res.status(200).sendFile(path.join(__dirname, "public", "nonerror.html"));
-  } catch (error) {
-    console.error(error);
-    res.status(500).sendFile(path.join(__dirname, "public", "error.html"));
+  } catch (err) {
+    console.error(err);
+    res.sendFile(path.join(__dirname, "public", "error.html"));
   }
 });
 
+// =================== IMAGE OCR + SUMMARY ===================
 app.post("/summarize-image", upload.single("image"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No image uploaded" });
+  if (!req.file) {
+    return res.status(400).json({ error: "No image uploaded" });
+  }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const imagePart = {
       inlineData: {
         data: req.file.buffer.toString("base64"),
-        mimeType: req.file.mimetype,
-      },
+        mimeType: req.file.mimetype
+      }
     };
 
     const prompt = `
-Extract all text from this image and summarize it and more easy to read.
-Return: { "extractedText": "...", "summary": "..." }.
-Summarize in plain text.
+You are an OCR system.
+
+Extract ALL visible text from the image.
+Then summarize it in easy language.
+
+IMPORTANT:
+- Output ONLY valid JSON
+- No markdown
+- No extra text
+
+Format:
+{
+  "extractedText": "...",
+  "summary": "..."
+}
 `;
 
     const result = await model.generateContent([prompt, imagePart]);
-    const responseText = await result.response.text();
+    const responseText = result.response.text();
+
+    console.log("RAW AI RESPONSE:\n", responseText);
 
     const cleanText = responseText
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
 
-    const parsed = JSON.parse(cleanText);
+    let parsed;
+    try {
+      parsed = JSON.parse(cleanText);
+    } catch {
+      return res.json({
+        extractedText: responseText,
+        summary: "AI returned unstructured text"
+      });
+    }
 
     res.json({
       extractedText: parsed.extractedText || "",
       summary: parsed.summary || ""
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to summarize image" });
   }
 });
 
+// =================== START SERVER ===================
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
