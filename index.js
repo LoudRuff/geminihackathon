@@ -7,16 +7,13 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 const PORT = 3000;
 
-// =================== CONFIG ===================
 const upload = multer({ storage: multer.memoryStorage() });
-const genAI = new GoogleGenerativeAI("AIzaSyBNgkIHLSMZbrf3IrsVukjMvqj1RLe8EUk");
+const genAI = new GoogleGenerativeAI("AIzaSyDsZTyU7lGQ28a7EoODBlJFb3JjtXPYbUA");
 
-// =================== MIDDLEWARE ===================
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// =================== EMAIL + AI AUTO REPLY ===================
 app.post("/send", async (req, res) => {
   const { name, email, doctorId } = req.body;
 
@@ -25,11 +22,10 @@ app.post("/send", async (req, res) => {
       service: "gmail",
       auth: {
         user: "coslog000@gmail.com",
-        pass: "rwho kjzs dhii emuz" // app password
+        pass: "rwho kjzs dhii emuz"
       }
     });
 
-    // ---- Send email to hospital ----
     await transporter.sendMail({
       from: `"${name}" <${email}>`,
       to: "coslog000@gmail.com",
@@ -38,42 +34,32 @@ app.post("/send", async (req, res) => {
       replyTo: email
     });
 
-    // ---- Generate AI reply ----
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
-Write a polite and professional email reply to a patient.
-
+Write a polite professional email reply.
 Patient Name: ${name}
 Doctor ID: ${doctorId}
 Hospital Name: OPTIMA-CENTRUM-CARE
-
-Rules:
-- Calm and reassuring tone
-- No markdown
-- No explanation
+No markdown.
 `;
 
     const result = await model.generateContent(prompt);
-    const aiReply = result.response.text().trim();
+    const reply = result.response.text().trim();
 
-    // ---- Auto reply to user ----
     await transporter.sendMail({
       from: `"OPTIMA-CENTRUM-CARE" <coslog000@gmail.com>`,
       to: email,
       subject: "Appointment Request Received",
-      text: aiReply
+      text: reply
     });
 
     res.sendFile(path.join(__dirname, "public", "nonerror.html"));
-
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
     res.sendFile(path.join(__dirname, "public", "error.html"));
   }
 });
 
-// =================== IMAGE OCR + SUMMARY ===================
 app.post("/summarize-image", upload.single("image"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No image uploaded" });
@@ -90,56 +76,38 @@ app.post("/summarize-image", upload.single("image"), async (req, res) => {
     };
 
     const prompt = `
-You are an OCR system.
+Extract all visible text exactly as written.
+Then summarize it simply.
+Return ONLY valid JSON.
 
-Extract ALL visible text from the image.
-Then summarize it in easy language.
-
-IMPORTANT:
-- Output ONLY valid JSON
-- No markdown
-- No extra text
-
-Format:
 {
-  "extractedText": "...",
-  "summary": "..."
+  "extractedText": "",
+  "summary": ""
 }
 `;
 
     const result = await model.generateContent([prompt, imagePart]);
-    const responseText = result.response.text();
+    const text = result.response.text().replace(/```json|```/g, "").trim();
 
-    console.log("RAW AI RESPONSE:\n", responseText);
-
-    const cleanText = responseText
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    let parsed;
+    let data;
     try {
-      parsed = JSON.parse(cleanText);
+      data = JSON.parse(text);
     } catch {
       return res.json({
-        extractedText: responseText,
-        summary: "AI returned unstructured text"
+        extractedText: text,
+        summary: ""
       });
     }
 
     res.json({
-      extractedText: parsed.extractedText || "",
-      summary: parsed.summary || ""
+      extractedText: data.extractedText || "",
+      summary: data.summary || ""
     });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to summarize image" });
+  } catch (e) {
+    res.status(500).json({ error: "Failed" });
   }
 });
 
-// =================== START SERVER ===================
 app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
-
