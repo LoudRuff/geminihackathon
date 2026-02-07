@@ -66,7 +66,9 @@ app.post("/summarize-image", upload.single("image"), async (req, res) => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash"
+    });
 
     const imagePart = {
       inlineData: {
@@ -76,8 +78,8 @@ app.post("/summarize-image", upload.single("image"), async (req, res) => {
     };
 
     const prompt = `
-Extract all visible text exactly as written.
-Then summarize it simply.
+Extract ALL visible text exactly as written.
+Then give a short simple summary.
 Return ONLY valid JSON.
 
 {
@@ -86,15 +88,26 @@ Return ONLY valid JSON.
 }
 `;
 
-    const result = await model.generateContent([prompt, imagePart]);
-    const text = result.response.text().replace(/```json|```/g, "").trim();
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            imagePart
+          ]
+        }
+      ]
+    });
+
+    const rawText = result.response.text().replace(/```json|```/g, "").trim();
 
     let data;
     try {
-      data = JSON.parse(text);
-    } catch {
+      data = JSON.parse(rawText);
+    } catch (err) {
       return res.json({
-        extractedText: text,
+        extractedText: rawText,
         summary: ""
       });
     }
@@ -103,11 +116,15 @@ Return ONLY valid JSON.
       extractedText: data.extractedText || "",
       summary: data.summary || ""
     });
+
   } catch (e) {
-    res.status(500).json({ error: "Failed" });
+    console.error(e);
+    res.status(500).json({ error: "Failed to extract text" });
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
