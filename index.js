@@ -2,18 +2,26 @@ const express = require("express");
 const path = require("path");
 const multer = require("multer");
 const nodemailer = require("nodemailer");
+const Tesseract = require("tesseract.js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
 const PORT = 3000;
 
+// 🔹 Multer (memory storage)
 const upload = multer({ storage: multer.memoryStorage() });
-const genAI = new GoogleGenerativeAI("AIzaSyDsZTyU7lGQ28a7EoODBlJFb3JjtXPYbUA");
 
+// 🔹 Gemini API
+const genAI = new GoogleGenerativeAI("YOUR_GEMINI_API_KEY");
+
+// 🔹 Middleware
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+/* ======================================================
+   EMAIL + GEMINI AUTO REPLY
+====================================================== */
 app.post("/send", async (req, res) => {
   const { name, email, doctorId } = req.body;
 
@@ -22,10 +30,11 @@ app.post("/send", async (req, res) => {
       service: "gmail",
       auth: {
         user: "coslog000@gmail.com",
-        pass: "rwho kjzs dhii emuz"
+        pass: "YOUR_APP_PASSWORD"
       }
     });
 
+    // 📩 Send request to hospital
     await transporter.sendMail({
       from: `"${name}" <${email}>`,
       to: "coslog000@gmail.com",
@@ -34,7 +43,10 @@ app.post("/send", async (req, res) => {
       replyTo: email
     });
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // 🤖 Gemini auto reply
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash"
+    });
 
     const prompt = `
 Write a polite professional email reply.
@@ -47,6 +59,7 @@ No markdown.
     const result = await model.generateContent(prompt);
     const reply = result.response.text().trim();
 
+    // 📩 Reply to patient
     await transporter.sendMail({
       from: `"OPTIMA-CENTRUM-CARE" <coslog000@gmail.com>`,
       to: email,
@@ -55,78 +68,66 @@ No markdown.
     });
 
     res.sendFile(path.join(__dirname, "public", "nonerror.html"));
-  } catch (e) {
+  } catch (err) {
+    console.error(err);
     res.sendFile(path.join(__dirname, "public", "error.html"));
   }
 });
 
+/* ======================================================
+   IMAGE OCR (TESSERACT) + SUMMARY (GEMINI)
+====================================================== */
 app.post("/summarize-image", upload.single("image"), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No image uploaded" });
   }
 
   try {
+    // 🔍 OCR using Tesseract
+    const ocr = await Tesseract.recognize(
+      req.file.buffer,
+      "eng",
+      {
+        logger: m => console.log(m.status)
+      }
+    );
+
+    const extractedText = ocr.data.text.trim();
+
+    if (!extractedText) {
+      return res.json({
+        extractedText: "",
+        summary: "No readable text found in image"
+      });
+    }
+
+    // 🤖 Summarize using Gemini
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash"
     });
 
-    const imagePart = {
-      inlineData: {
-        data: req.file.buffer.toString("base64"),
-        mimeType: req.file.mimetype
-      }
-    };
-
     const prompt = `
-Extract ALL visible text exactly as written.
-Then give a short simple summary.
-Return ONLY valid JSON.
+Summarize the following text in simple language:
 
-{
-  "extractedText": "",
-  "summary": ""
-}
+${extractedText}
 `;
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-            imagePart
-          ]
-        }
-      ]
-    });
-
-    const rawText = result.response.text().replace(/```json|```/g, "").trim();
-
-    let data;
-    try {
-      data = JSON.parse(rawText);
-    } catch (err) {
-      return res.json({
-        extractedText: rawText,
-        summary: ""
-      });
-    }
+    const result = await model.generateContent(prompt);
+    const summary = result.response.text().trim();
 
     res.json({
-      extractedText: data.extractedText || "",
-      summary: data.summary || ""
+      extractedText,
+      summary
     });
-
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to extract text" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "OCR or summarization failed" });
   }
 });
 
-
+/* ======================================================
+   SERVER START
+====================================================== */
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
-
-
-
